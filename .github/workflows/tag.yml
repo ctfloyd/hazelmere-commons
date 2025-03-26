@@ -1,0 +1,22 @@
+name: Automated Tagging
+on:
+  push:
+    branches:
+      - main
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Create tag
+        id: tag
+        run: echo "TAG=v0.0.${{ github.run_number }}" >> $GITHUB_ENV
+
+      - name: Push tag
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git tag ${{ env.TAG }}
+          git push origin ${{ env.TAG }}
