@@ -1,4 +1,4 @@
-package client
+package hz_client
 
 import (
 	"bytes"
