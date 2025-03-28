@@ -33,16 +33,16 @@ func NewConfigWithDefaultPath(environment string) *Config {
 	return NewConfigFromPath(fmt.Sprintf("./config/%s.json", strings.ToLower(environment)))
 }
 
-func NewConfigWithEnvironemntVariableName(name string) *Config {
+func NewConfigWithEnvironmentVariableName(name string) *Config {
 	env, err := getEnv(name)
 	if err != nil {
-		panic(err)
+		env = "dev"
 	}
 	return NewConfigWithDefaultPath(env)
 }
 
 func NewConfigWithAutomaticDetection() *Config {
-	return NewConfigWithEnvironemntVariableName("ENVIRONMENT")
+	return NewConfigWithEnvironmentVariableName("ENVIRONMENT")
 }
 
 func (c *Config) Read() error {
