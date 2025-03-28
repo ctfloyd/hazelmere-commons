@@ -104,15 +104,22 @@ func (c *Config) Value(key string) (string, error) {
 
 	valueStr, ok := value.(string)
 	if !ok {
-		return "", InvalidKey
+		intStr, ok := value.(int)
+		if !ok {
+			return "", InvalidKey
+		} else {
+			valueStr = strconv.Itoa(intStr)
+		}
 	}
 
 	n := len(valueStr)
-	if valueStr[0:2] == "{{" && valueStr[n-2:n] == "}}" {
-		var err error
-		valueStr, err = getEnv(valueStr[2 : n-2])
-		if err != nil {
-			return "", InvalidKey
+	if n > 4 {
+		if valueStr[0:2] == "{{" && valueStr[n-2:n] == "}}" {
+			var err error
+			valueStr, err = getEnv(valueStr[2 : n-2])
+			if err != nil {
+				return "", InvalidKey
+			}
 		}
 	}
 
