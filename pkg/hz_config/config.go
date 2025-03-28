@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -67,6 +68,15 @@ func (c *Config) ValueOrPanic(key string) string {
 		panic("Could not find value for key: " + key)
 	}
 	return v
+}
+
+func (c *Config) IntValueOrPanic(key string) int {
+	v := c.ValueOrPanic(key)
+	i, err := strconv.Atoi(v)
+	if err != nil {
+		panic("could not convert key: " + key + " with value: " + v + " to int")
+	}
+	return i
 }
 
 func (c *Config) Value(key string) (string, error) {
