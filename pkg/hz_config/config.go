@@ -102,11 +102,14 @@ func (c *Config) Value(key string) (string, error) {
 		return "", InvalidKey
 	}
 
-	valueStr, ok := value.(string)
-	if !ok {
-		intStr, ok := value.(int)
-		if !ok {
-			return "", InvalidKey
+	var valueStr = ""
+	if valueStr, ok = value.(string); !ok {
+		if intStr, ok := value.(int); !ok {
+			if floatStr, ok := value.(float64); !ok {
+				return "", InvalidKey
+			} else {
+				valueStr = fmt.Sprintf("%f", floatStr)
+			}
 		} else {
 			valueStr = strconv.Itoa(intStr)
 		}
