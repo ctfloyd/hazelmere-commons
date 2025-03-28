@@ -72,11 +72,11 @@ func (c *Config) ValueOrPanic(key string) string {
 
 func (c *Config) IntValueOrPanic(key string) int {
 	v := c.ValueOrPanic(key)
-	i, err := strconv.Atoi(v)
+	f, err := strconv.ParseFloat(v, 64)
 	if err != nil {
 		panic("could not convert key: " + key + " with value: " + v + " to int")
 	}
-	return i
+	return int(f)
 }
 
 func (c *Config) Value(key string) (string, error) {
