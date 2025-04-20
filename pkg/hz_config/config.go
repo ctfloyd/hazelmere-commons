@@ -184,22 +184,23 @@ func (c *Config) getValue(key string) (any, bool) {
 }
 
 func convertToString(value any) (string, bool) {
-	valueStr := ""
-	ok := false
-
-	if valueStr, ok = value.(string); !ok {
-		if intStr, ok := value.(int); !ok {
-			if floatStr, ok := value.(float64); !ok {
-				return "", false
-			} else {
-				valueStr = fmt.Sprintf("%f", floatStr)
-			}
-		} else {
-			valueStr = strconv.Itoa(intStr)
-		}
+	if valueStr, ok := value.(string); ok {
+		return valueStr, true
 	}
 
-	return valueStr, true
+	if intStr, ok := value.(int); ok {
+		return strconv.Itoa(intStr), true
+	}
+
+	if floatStr, ok := value.(float64); ok {
+		return fmt.Sprintf("%f", floatStr), true
+	}
+
+	if boolStr, ok := value.(bool); ok {
+		return strconv.FormatBool(boolStr), true
+	}
+
+	return "", false
 }
 
 func resolveValue(valueStr string) (string, bool) {
