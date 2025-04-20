@@ -100,7 +100,6 @@ func (c *Config) BoolValueOrPanic(key string) bool {
 }
 
 func (c *Config) StringSliceValueOrPanic(key string) []string {
-	v := c.ValueOrPanic(key)
 	ss, err := c.StringSliceValue(key)
 	if err != nil {
 		panic("could not convert key: " + key + " with value: " + v + " to []string")
