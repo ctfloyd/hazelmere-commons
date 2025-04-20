@@ -21,12 +21,19 @@ func getEnv(key string) (string, error) {
 
 type Config struct {
 	path   string
+	bytes  []byte
 	values interface{}
 }
 
 func NewConfigFromPath(path string) *Config {
 	return &Config{
 		path: path,
+	}
+}
+
+func NewConfigFromString(value string) *Config {
+	return &Config{
+		bytes: []byte(value),
 	}
 }
 
@@ -51,14 +58,18 @@ func (c *Config) Read() error {
 	if err != nil {
 		return err
 	}
+	c.bytes = bytes
+	return c.Parse()
+}
 
+func (c *Config) Parse() error {
 	var data interface{}
-	err = json.Unmarshal(bytes, &data)
+	err := json.Unmarshal(c.bytes, &data)
 	if err != nil {
 		return err
 	}
-
 	c.values = data
+	c.bytes = nil // throw away bytes after reading them
 	return nil
 }
 
@@ -79,34 +90,107 @@ func (c *Config) IntValueOrPanic(key string) int {
 	return int(f)
 }
 
+func (c *Config) BoolValueOrPanic(key string) bool {
+	v := c.ValueOrPanic(key)
+	f, err := strconv.ParseBool(v)
+	if err != nil {
+		panic("could not convert key: " + key + " with value: " + v + " to bool")
+	}
+	return f
+}
+
+func (c *Config) StringSliceValueOrPanic(key string) []string {
+	v := c.ValueOrPanic(key)
+	ss, err := c.StringSliceValue(key)
+	if err != nil {
+		panic("could not convert key: " + key + " with value: " + v + " to []string")
+	}
+	return ss
+}
+
+func (c *Config) StringSliceValue(key string) ([]string, error) {
+	value, ok := c.getValue(key)
+	if !ok {
+		return nil, InvalidKey
+	}
+
+	var ss []string
+	if anySlice, ok := value.([]any); ok {
+		for _, val := range anySlice {
+			valStr, ok := convertToString(val)
+			if !ok {
+				return nil, InvalidKey
+			}
+			valStr = strings.TrimSpace(valStr)
+
+			resolvedValue, ok := resolveValue(valStr)
+			if !ok {
+				return nil, InvalidKey
+			}
+			ss = append(ss, resolvedValue)
+		}
+	}
+
+	if ss != nil {
+		return ss, nil
+	}
+
+	return nil, InvalidKey
+}
+
 func (c *Config) Value(key string) (string, error) {
-	obj, ok := c.values.(map[string]interface{})
+	value, ok := c.getValue(key)
 	if !ok {
 		return "", InvalidKey
+	}
+
+	valueStr, ok := convertToString(value)
+	if !ok {
+		return "", InvalidKey
+	}
+
+	resolved, ok := resolveValue(valueStr)
+	if !ok {
+		return "", InvalidKey
+	}
+
+	return resolved, nil
+}
+
+func (c *Config) getValue(key string) (any, bool) {
+	obj, ok := c.values.(map[string]interface{})
+	if !ok {
+		return "", false
 	}
 
 	parts := strings.Split(key, ".")
 	for _, part := range parts[:len(parts)-1] {
 		i, ok := obj[part]
 		if !ok {
-			return "", InvalidKey
+			return "", false
 		}
 		obj, ok = i.(map[string]interface{})
 		if !ok {
-			return "", InvalidKey
+			return "", false
 		}
 	}
 
 	value, ok := obj[parts[len(parts)-1]]
 	if !ok {
-		return "", InvalidKey
+		return "", false
 	}
 
-	var valueStr = ""
+	return value, true
+}
+
+func convertToString(value any) (string, bool) {
+	valueStr := ""
+	ok := false
+
 	if valueStr, ok = value.(string); !ok {
 		if intStr, ok := value.(int); !ok {
 			if floatStr, ok := value.(float64); !ok {
-				return "", InvalidKey
+				return "", false
 			} else {
 				valueStr = fmt.Sprintf("%f", floatStr)
 			}
@@ -115,16 +199,19 @@ func (c *Config) Value(key string) (string, error) {
 		}
 	}
 
+	return valueStr, true
+}
+
+func resolveValue(valueStr string) (string, bool) {
 	n := len(valueStr)
 	if n > 4 {
 		if valueStr[0:2] == "{{" && valueStr[n-2:n] == "}}" {
 			var err error
 			valueStr, err = getEnv(valueStr[2 : n-2])
 			if err != nil {
-				return "", InvalidKey
+				return "", false
 			}
 		}
 	}
-
-	return valueStr, nil
+	return valueStr, true
 }

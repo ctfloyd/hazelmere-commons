@@ -4,25 +4,13 @@ import (
 	"fmt"
 	"github.com/ctfloyd/hazelmere-commons/pkg/hz_api"
 	"github.com/ctfloyd/hazelmere-commons/pkg/hz_service_error"
-	"github.com/go-chi/chi/v5"
 	jsoniter "github.com/json-iterator/go"
 	"io"
 	"net/http"
 	"time"
 )
 
-type ApiVersion int
-
-const (
-	_ ApiVersion = iota
-	ApiVersionV1
-)
-
 const RegexUuid string = `[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}`
-
-type HazelmereHandler interface {
-	RegisterRoutes(mux *chi.Mux, version ApiVersion)
-}
 
 func Error(w http.ResponseWriter, serviceError hz_service_error.ServiceError, message string) {
 	response := convertServiceErrorToResponse(serviceError, message)
