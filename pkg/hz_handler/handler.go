@@ -23,6 +23,10 @@ func Error(w http.ResponseWriter, serviceError hz_service_error.ServiceError, me
 	_, _ = w.Write(b)
 }
 
+func ErrorArgs(w http.ResponseWriter, serviceError hz_service_error.ServiceError, message string, args ...any) {
+	Error(w, serviceError, fmt.Sprintf(message, args...))
+}
+
 func Ok(w http.ResponseWriter, response any) {
 	b, err := jsoniter.Marshal(response)
 	if err != nil {
