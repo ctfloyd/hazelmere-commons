@@ -28,7 +28,6 @@ func ErrorArgs(w http.ResponseWriter, serviceError hz_service_error.ServiceError
 }
 
 func Ok(w http.ResponseWriter, response any) {
-	w.WriteHeader(http.StatusOK)
 	if response != nil {
 		b, err := jsoniter.Marshal(response)
 		if err != nil {
@@ -41,6 +40,7 @@ func Ok(w http.ResponseWriter, response any) {
 			Error(w, hz_service_error.Internal, "Could not write all bytes in the response.")
 		}
 	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func ReadBody(w http.ResponseWriter, r *http.Request, body any) bool {
