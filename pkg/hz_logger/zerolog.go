@@ -58,7 +58,7 @@ func (l *ZeroLogAdapter) Error(ctx context.Context, message string) {
 }
 
 func (l *ZeroLogAdapter) ErrorArgs(ctx context.Context, message string, args ...any) {
-	l.Warn(ctx, fmt.Sprintf(message, args...))
+	l.Error(ctx, fmt.Sprintf(message, args...))
 }
 
 func NewZeroLogAdapater(level LogLevel) *ZeroLogAdapter {
