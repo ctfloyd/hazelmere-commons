@@ -28,15 +28,18 @@ func ErrorArgs(w http.ResponseWriter, serviceError hz_service_error.ServiceError
 }
 
 func Ok(w http.ResponseWriter, response any) {
-	b, err := jsoniter.Marshal(response)
-	if err != nil {
-		Error(w, hz_service_error.Internal, "Could not marshal response.")
-	}
-	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(b)
-	if err != nil {
-		Error(w, hz_service_error.Internal, "Could not write all bytes in the response.")
+	if response != nil {
+		b, err := jsoniter.Marshal(response)
+		if err != nil {
+			Error(w, hz_service_error.Internal, "Could not marshal response.")
+			return
+		}
+		w.Header().Add("Content-Type", "application/json")
+		_, err = w.Write(b)
+		if err != nil {
+			Error(w, hz_service_error.Internal, "Could not write all bytes in the response.")
+		}
 	}
 }
 
