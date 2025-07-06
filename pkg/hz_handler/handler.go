@@ -12,22 +12,36 @@ import (
 
 const RegexUuid string = `[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}`
 
-func Error(w http.ResponseWriter, serviceError hz_service_error.ServiceError, message string) {
-	response := convertServiceErrorToResponse(serviceError, message)
+type ErrorResponse interface {
+	GetStatus() int
+}
+
+type ConvertFn func(serviceError hz_service_error.ServiceError, message string) ErrorResponse
+
+func ErrorWithConvertFn(w http.ResponseWriter, serviceError hz_service_error.ServiceError, message string, convertFn ConvertFn) {
+	response := convertFn(serviceError, message)
 	b, err := jsoniter.Marshal(response)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(response.Status)
+	w.WriteHeader(response.GetStatus())
 	_, _ = w.Write(b)
 }
 
-func ErrorArgs(w http.ResponseWriter, serviceError hz_service_error.ServiceError, message string, args ...any) {
-	Error(w, serviceError, fmt.Sprintf(message, args...))
+func Error(w http.ResponseWriter, serviceError hz_service_error.ServiceError, message string) {
+	ErrorWithConvertFn(w, serviceError, message, convertServiceErrorToResponse)
 }
 
-func Ok(w http.ResponseWriter, response any) {
+func ErrorArgs(w http.ResponseWriter, serviceError hz_service_error.ServiceError, message string, args ...any) {
+	ErrorArgsWithConvertFn(w, serviceError, convertServiceErrorToResponse, message, args)
+}
+
+func ErrorArgsWithConvertFn(w http.ResponseWriter, serviceError hz_service_error.ServiceError, convertFn ConvertFn, message string, args ...any) {
+	ErrorWithConvertFn(w, serviceError, fmt.Sprintf(message, args...), convertFn)
+}
+
+func Json(w http.ResponseWriter, status int, response any) {
 	if response != nil {
 		b, err := jsoniter.Marshal(response)
 		if err != nil {
@@ -40,7 +54,11 @@ func Ok(w http.ResponseWriter, response any) {
 			Error(w, hz_service_error.Internal, "Could not write all bytes in the response.")
 		}
 	}
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(status)
+}
+
+func Ok(w http.ResponseWriter, response any) {
+	Json(w, http.StatusOK, response)
 }
 
 func ReadBody(w http.ResponseWriter, r *http.Request, body any) bool {
@@ -59,7 +77,7 @@ func ReadBody(w http.ResponseWriter, r *http.Request, body any) bool {
 	return true
 }
 
-func convertServiceErrorToResponse(serviceError hz_service_error.ServiceError, message string) hz_api.ErrorResponse {
+func convertServiceErrorToResponse(serviceError hz_service_error.ServiceError, message string) ErrorResponse {
 	return hz_api.ErrorResponse{
 		Code:      serviceError.Code,
 		Status:    serviceError.Status,

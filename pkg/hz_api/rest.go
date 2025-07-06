@@ -8,3 +8,7 @@ type ErrorResponse struct {
 	Status    int       `json:"status"`
 	Timestamp time.Time `json:"timestamp"`
 }
+
+func (e ErrorResponse) GetStatus() int {
+	return e.Status
+}
