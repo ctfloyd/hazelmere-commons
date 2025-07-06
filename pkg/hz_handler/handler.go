@@ -16,10 +16,7 @@ type ErrorResponse interface {
 	GetStatus() int
 }
 
-type ConvertFn func(serviceError hz_service_error.ServiceError, message string) ErrorResponse
-
-func ErrorWithConvertFn(w http.ResponseWriter, serviceError hz_service_error.ServiceError, message string, convertFn ConvertFn) {
-	response := convertFn(serviceError, message)
+func ErrorWithResponse(w http.ResponseWriter, response ErrorResponse) {
 	b, err := jsoniter.Marshal(response)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -30,15 +27,11 @@ func ErrorWithConvertFn(w http.ResponseWriter, serviceError hz_service_error.Ser
 }
 
 func Error(w http.ResponseWriter, serviceError hz_service_error.ServiceError, message string) {
-	ErrorWithConvertFn(w, serviceError, message, convertServiceErrorToResponse)
+	ErrorWithResponse(w, convertServiceErrorToResponse(serviceError, message))
 }
 
 func ErrorArgs(w http.ResponseWriter, serviceError hz_service_error.ServiceError, message string, args ...any) {
-	ErrorArgsWithConvertFn(w, serviceError, convertServiceErrorToResponse, message, args)
-}
-
-func ErrorArgsWithConvertFn(w http.ResponseWriter, serviceError hz_service_error.ServiceError, convertFn ConvertFn, message string, args ...any) {
-	ErrorWithConvertFn(w, serviceError, fmt.Sprintf(message, args...), convertFn)
+	ErrorWithResponse(w, convertServiceErrorToResponse(serviceError, fmt.Sprintf(message, args)))
 }
 
 func Json(w http.ResponseWriter, status int, response any) {
